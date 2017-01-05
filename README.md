@@ -11,7 +11,8 @@ This is an Übersicht widget that displays the sender and the subject line of th
 2. Go to https://console.developers.google.com > click on API Project > select Create project > fill in your project name > click on create
 3. Make sure you are in API Manager
 4. Select Credentials > select Create credentials > select OAuth client ID > select Other > fill in the name such as ubersicht > copy client ID and client secret > paste them in the gmail.coffee file after CLIENT_ID: and CLIENT_SECRET: They are located on the top. Note that you would need to store them as string i.e. surround them with ```""```. 
-The cred file should look like the following```
+The cred file should look like the following:
+```
 CLIENT_ID: "your_client_id"
 CLIENT_SECRET: "your_client_secret"
 AUTHORIZATION_CODE:
