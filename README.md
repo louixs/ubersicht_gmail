@@ -1,4 +1,4 @@
-# Gmail widget for Übersicht
+# Gmail widget for Übersicht (Übersicht Google Widgets Suite)
 
 Here it comes, a new year and a new widget. Let's make 2017 a good year! I'll start small.
 
