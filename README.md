@@ -12,9 +12,10 @@ This is an Übersicht widget that displays the sender and the subject line of th
 3. Make sure you are in API Manager
 4. Select Credentials > select Create credentials > select OAuth client ID > select Other > fill in the name such as ubersicht > copy client ID and client secret > paste them in the gmail.coffee file after CLIENT_ID: and CLIENT_SECRET: They are located on the top. Note that you would need to store them as string i.e. surround them with ```""```. 
 The cred file should look like the following```
-CLIENT_ID: your_client_id
-CLIENT_SECRET: your_client_secret
-AUTHORIZATION_CODE:```
+CLIENT_ID: "your_client_id"
+CLIENT_SECRET: "your_client_secret"
+AUTHORIZATION_CODE:
+```
 5. Go to OAuth consent screen > fill in/choose your gmail address > fill in Product name shown to users with the same name that you chose in the step 2 above > make sure to save
 6. Saving your script should launch a web browser asking whether you would like to allow your app to view gmail. Click Allow and the next screen will show a code. Please copy and paste it in the cred file besides AUTHORIZATION_CODE:. In case a browser does not launch please click on Refresh All Widgets option found in Ubersichts icon on your mac menu bar.
 
