@@ -1,6 +1,6 @@
 {
   "name": "Gmail",
-  "description": "Displays the sender and subject line of the latest email delivered to your gmail Inbox. ",
+  "description": "Displays the sender and subject line of the latest email delivered to your gmail Inbox. This is a part of Übersicht Google Widgets bundle.",
   "author": "Ryuei Sasaki",
   "email": "ryuei.sasaki@gmail.com"
 }
