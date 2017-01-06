@@ -15,6 +15,7 @@ CLIENT_ID:""
 CLIENT_SECRET:""
 AUTHORIZATION_CODE:""
 
+#-----------
 command: """
   if [ ! -d assets ]; then
     cd "$PWD/gmail.widget"
@@ -52,7 +53,6 @@ update: (output,domEl)->
     from=data[0]
     subj=data[1]
   
-    #console.log(data[0])
     $(domEl).find("#from").text("From: "+from)
     $(domEl).find("#subj").text("Subj:"+subj)
     #console.log("item#{i+1}") for i in [0..2]
