@@ -6,16 +6,18 @@
 # Dependencies. Best to leave them alone.
 _ = require('./assets/lib/underscore.js');
 
-# Fill in your Google API cleint id and client secret
+#==== Google API Credentials ====
+# Fill in your Google API client id and client secret
 # Save this file and a browser should launch asking you to allow widget to access gmail
 # Once you allow, you will be presented with your Authorization code. Please fill it in and save the file.
 # Your latest email should now show. If not try refreshing Übersicht.
 # If you don't have your client id and/or client secret, please follow the steps in the Setup section in README.md.
+ 
 CLIENT_ID:""
 CLIENT_SECRET:""
 AUTHORIZATION_CODE:""
-
-#-----------
+#====
+# 
 command: """
   if [ ! -d assets ]; then
     cd "$PWD/gmail.widget"
