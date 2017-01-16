@@ -11,19 +11,24 @@
 source debugLogger.sh
 # Debug function to trace all scripts run below it
 # uncomment the below to enable the debugger:
-#activate_debug_logger
+# activate_debug_logger
+
+declare -rx GOOGLE_APP=gmail
 
 # Set initial variables these should not be mutated
-GOOGLE_API="gmail" #specify which API it is for
-PARENT_DIR=${PWD%/*}
-COFFEE_FILE="$PARENT_DIR"/"$GOOGLE_API".coffee
-SIGNAL_FILE=signal
-TOKEN_FILE=token
-R_TOKEN_FILE=r_token
+declare -rx PARENT_DIR=${PWD%/*}
+declare -rx COFFEE_FILE="$PARENT_DIR"/"$GOOGLE_APP".coffee
+
+declare -rx three_DIR_UP=${PWD%/*/*/*}
+declare -rx DEV_CONFIG_FILE="$three_DIR_UP"/google_oauth_"$GOOGLE_APP".config
+
+declare -rx SIGNAL_FILE=signal.db
+declare -rx TOKEN_FILE=token.db
+declare -rx R_TOKEN_FILE=r_token.db
 
 #addresses
-SCOPE="https://www.googleapis.com/auth/$GOOGLE_API.readonly"
-REDIRECT_URI=urn:ietf:wg:oauth:2.0:oob
+SCOPE=https://www.googleapis.com/auth/"$GOOGLE_APP".readonly
+declare -rx REDIRECT_URI=urn:ietf:wg:oauth:2.0:oob
 #================
 
 function timeNow(){
@@ -34,7 +39,7 @@ function timeNow(){
 # A function that checks if a variable exists or no
 function varExists(){
   # check if the variable exists or not
-  if [ $1 ]; then
+  if [ "$1" ]; then
      echo 1 # var exists
   else
      echo 0 # var does not exist
@@ -59,6 +64,7 @@ function makeMultipleFiles(){
   # accepts multiple files
   # pass them as a space separated string as below
   # "$SIGNAL_FILE $LOG_FILE"
+  local file
   for file in $1
   do
     makeFileIfNone $file
@@ -86,26 +92,78 @@ function isSignalGet(){
   fi
 }
 
-function readCoffeeFileAndSetVars(){
+function readCredVar(){
+  #$1 = file name 
+  #$2 = var name e.g. CLIENT_ID
+  local credVar=$(sed -e 1b "$1" | grep "$2" | sed 's/.*://' | sed 's/"//' | sed '$s/"/ /g' | xargs)
+  echo "$credVar"
+}
+
+function setCredVars(){
   # 1. when wrapped in a function, sed doesn't spit out the error if it cannot fild value
   # 2. AUTH_URL needs to be set right after reading the variables from .coffee file, else it was not picking up correctly
   # most likely due to polluted global scope that mutates variables all the time
-  COFFEE_FILE="$PARENT_DIR"/"$GOOGLE_API".coffee
-  CLIENT_ID=$(sed -e 1b "$COFFEE_FILE" | grep CLIENT_ID | sed 's/.*://' | sed 's/"//' | sed '$s/"/ /g' | xargs)
-  CLIENT_SECRET=$(sed -e 1b "$COFFEE_FILE" | grep CLIENT_SECRET | sed 's/.*://' | sed 's/"//' | sed '$s/"/ /g' | xargs)
-  AUTHORIZATION_CODE=$(sed -e 1b "$COFFEE_FILE" | grep AUTHORIZATION_CODE | sed 's/.*://' | sed 's/"//' | sed '$s/"/ /g' | xargs)  
+
+  # $1 = config_file location
+  local FILE=$1
+  
+  CLIENT_ID=$(readCredVar "$FILE" CLIENT_ID)
+  CLIENT_SECRET=$(readCredVar "$FILE" CLIENT_SECRET)
+  AUTHORIZATION_CODE=$(readCredVar "$FILE" AUTHORIZATION_CODE)
   AUTH_URL="https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=$CLIENT_ID&redirect_uri=$REDIRECT_URI&scope=$SCOPE&access_type=offline"
 }
 
+setupDevConfigFile(){
+   makeFileIfNone "$DEV_CONFIG_FILE"
+   
+   if [ -s "$DEV_CONFIG_FILE" ]; then # if file has some data
+     :
+   else
+     # if file is empty
+     echo "CLIENT_ID:" >> "$DEV_CONFIG_FILE"
+     echo "CLIENT_SECRET:" >> "$DEV_CONFIG_FILE"
+     echo "AUTHORIZATION_CODE:" >> "$DEV_CONFIG_FILE"
+   fi
+}
+
+#Make cofig file for client id, cliet secrets and authorization code if it does not exist 
+
+function assignCredentialVars(){
+  # check .coffee for credentails
+  local coffee_cred_var_exists=$(
+        local coffee_client_id=$(readCredVar "$COFFEE_FILE" CLIENT_ID )
+        local coffee_client_secret=$(readCredVar "$COFFEE_FILE" CLIENT_SECRET )
+        if [ ! -z "$coffee_client_id" ] && [ ! -z "coffee_client_secret" ] ; then
+        # if both exist
+          echo 1 # yes exist
+        else
+          echo 0 # nope
+        fi
+        )
+
+  # assign credential variables if they exist in .coffee
+  # and stop making google_oauth.config file
+  if [ "${coffee_cred_var_exists}" -eq 1 ]; then
+    setCredVars "$COFFEE_FILE"
+    CONFIG_FILE="$COFFEE_FILE" # set CONFIG_FILE globaly here
+  else
+  # for dev, credentials should not be filled in .coffee file
+  # make google_ouath.config outside of the app folder and set credentials from there
+    setupDevConfigFile
+    setCredVars "$DEV_CONFIG_FILE"
+    CONFIG_FILE="$DEV_CONFIG_FILE"
+  fi
+}
+
 function credCheck(){
-  readCoffeeFileAndSetVars
+  assignCredentialVars
   if [ ! -n "$CLIENT_ID" ] || [ ! -n "$CLIENT_SECRET" ]; then
     echo 1
     exit 1 #exit this script with error  
   elif [ -n "$CLIENT_ID" ] && [ -n "$CLIENT_SECRET" ]; then
-    readCoffeeFileAndSetVars
+    assignCredentialVars
   elif [ -s "$CLIENT_ID" ] && [ -s "$CLIENT_SECRET" ]; then
-    readCoffeeFileAndSetVars
+    assignCredentialVars
   else
     echo "Unhandled case; investigate and need to fix"
     echo "Please report this as a bug"
@@ -114,11 +172,11 @@ function credCheck(){
 }
 
 function checkAuthCode(){
-  readCoffeeFileAndSetVars
+  assignCredentialVars
   
-  if  ([ -s "$COFFEE_FILE" ] && [ $AUTHORIZATION_CODE ]); then
+  if  ([ -s "$CONFIG_FILE" ] && [ $AUTHORIZATION_CODE ]); then
     :
-  elif ([ -s "$COFFEE_FILE" ] && [ -n $AUTHORIZATION_CODE ]); then
+  elif ([ -s "$CONFIG_FILE" ] && [ -n $AUTHORIZATION_CODE ]); then
   # Authorization code should be needed only once first
   # once it is retrived and a valid access token is issued together with a refresh token
   # the refresh token should be used to re-new access token once it expired
@@ -147,15 +205,18 @@ function removeSignalFile(){
 }
 
 function checkRefreshToken(){
-  R_TOKEN_FILE=r_token
   REFRESH_TOKEN=$(sed -e 1b $R_TOKEN_FILE | grep refresh_token | sed 's/.*://' | xargs)
   local refresh_token_exists=$(varExists $REFRESH_TOKEN)
   if [ "${refresh_token_exists}" -eq 1 ]; then      
-    curl -sd "refresh_token=$REFRESH_TOKEN&client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&grant_type=refresh_token" https://www.googleapis.com/oauth2/v4/token > $TOKEN_FILE
-    #re-assign access_token to the updated one
-    ACCESS_TOKEN=$(cat "$TOKEN_FILE" | grep access_token | awk '{print $2}' | tr -d \",)
-    removeSignalFile
-    exit 0
+    # curl -sd "refresh_token=$REFRESH_TOKEN&client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&grant_type=refresh_token" https://www.googleapis.com/oauth2/v4/token > $TOKEN_FILE
+    # #re-assign access_token to the updated one
+    # ACCESS_TOKEN=$(cat "$TOKEN_FILE" | grep access_token | awk '{print $2}' | tr -d \",)
+    # removeSignalFile
+    # exit 0
+
+    # refresh token does not expire unless user revokes access to application
+    # for upgrade, check for validity of refresh token here
+    :
    else
      tokenExists
    fi
@@ -178,7 +239,7 @@ function getToken(){
 
       if [ "$refresh_token_exists" -eq 1 ] ; then
         # check if the newly retrieved token actually exists to make sure        
-        # write refresh token to the r_token file
+        # write refresh token to the r_token.db file
         echo "refresh_token:$new_refresh_token" > $R_TOKEN_FILE
         ACCESS_TOKEN=$new_access_token
         REFRESH_TOKEN=$(sed -e 1b "$R_TOKEN_FILE" | grep refresh_token | sed 's/.*://' | xargs)
@@ -224,7 +285,7 @@ function tokenExists(){
        
        if [ "${token_exists}" -eq 1 ]; then
          #save refresh_token to file
-         echo "refresh_token:$new_refresh_token" > r_token
+         echo "refresh_token:$new_refresh_token" > r_token.db
          #assign token
          ACCESS_TOKEN=$new_access_token
          REFRESH_TOKEN=$(sed -e 1b $R_TOKEN_FILE | grep refresh_token | sed 's/.*://' | xargs)
@@ -279,7 +340,7 @@ function checkTokenStatus(){
 
 # Read client id and secrets first in case they alreay exists for later usage
 # IMPORTANT
-readCoffeeFileAndSetVars
+assignCredentialVars
 
 # Make necessary files if they don't exist
 makeMultipleFiles "$TOKEN_FILE $R_TOKEN_FILE"

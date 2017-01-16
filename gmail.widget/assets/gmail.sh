@@ -5,7 +5,6 @@
 # Author: Ryuei Sasaki
 # Github: https://github.com/louixs/
 
-
 # -- For debugging
 function runDebugLogger(){
   if [ ! -e debugLogger.sh ]; then
@@ -46,47 +45,40 @@ export PATH="$foundPaths" &&
 
 #==============
 # config
-TOKEN_FILE=token
-ACCESS_TOKEN=$(cat "$TOKEN_FILE" | grep access_token | awk '{print $2}' | tr -d \",)
+readonly TOKEN_FILE=token.db
+readonly ACCESS_TOKEN=$(cat "$TOKEN_FILE" | grep access_token | awk '{print $2}' | tr -d \",)
+readonly MESSAGE_ID=https://www.googleapis.com/gmail/v1/users/me/messages
 
-function gmailSetup(){
-  #google tasks api ref
-  #https://developers.google.com/google-apps/tasks/v1/reference/
-  MESSAGE_ID=https://www.googleapis.com/gmail/v1/users/me/messages
-}
-gmailSetup
-
-getGmailStuff(){
+getGmailData(){
   curl -sH "Authorization: Bearer $ACCESS_TOKEN" $1
 }
 
 function getGmailId(){
-  id=$(getGmailStuff $MESSAGE_ID )
+  local id=$(getGmailData $MESSAGE_ID )
   echo $id > id.db
 }
 getGmailId
 
 function Ids(){
-  ids=$(./parsej.sh id.db | grep id | awk '{print $2}' | head -n$1)
+  local ids=$(./parsej.sh id.db | grep id | awk '{print $2}' | head -n$1)
   echo $ids
 }
-
-latestId=$(Ids 1)
 
 function makeMessageUrl(){
    echo https://www.googleapis.com/gmail/v1/users/me/messages/$1
 }
 
 function getLastMessage(){
+  local latestId=$(Ids 1)
   local url=$(makeMessageUrl $latestId)
-  msg=$(getGmailStuff $url)
+  local msg=$(getGmailData $url)
   echo $msg > gmail.db
 }
 
 getLastMessage
 
-from=$(./parsej.sh gmail.db | grep -A 1 From | tail -n1 | awk '{$1="";print $0}' | awk '{if(NF < 2){print $0}else{$NF=""; print $0}}')
+readonly from=$(./parsej.sh gmail.db | grep -A 1 From | tail -n1 | awk '{$1="";print $0}' | awk '{if(NF < 2){print $0}else{$NF=""; print $0}}')
 
-subj=$(./parsej.sh gmail.db | grep -A 1 Subject | tail -n1 | awk '{$1="";print $0}')
+readonly subj=$(./parsej.sh gmail.db | grep -A 1 Subject | tail -n1 | awk '{$1="";print $0}')
 
 echo "$from,$subj"

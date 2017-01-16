@@ -16,8 +16,7 @@ _ = require('./assets/lib/underscore.js');
 CLIENT_ID:""
 CLIENT_SECRET:""
 AUTHORIZATION_CODE:""
-#====
-# 
+
 command: """
   if [ ! -d assets ]; then
     cd "$PWD/gmail.widget"
