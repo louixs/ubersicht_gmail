@@ -6,6 +6,8 @@
 # Dependencies. Best to leave them alone.
 _ = require('./assets/lib/underscore.js');
 
+GOOGLE_APP: "gmail"
+
 #==== Google API Credentials ====
 # Fill in your Google API client id and client secret
 # Save this file and a browser should launch asking you to allow widget to access gmail
@@ -90,7 +92,7 @@ style: """
   color: #df740c  //#7eFFFF
   font-weight: 100
   font-size: 11 px
-  top: 31%
+  top: 50%
   left: 2%
   line-height: 1.5
   //margin-left: -40px
