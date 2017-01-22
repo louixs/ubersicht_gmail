@@ -36,6 +36,20 @@ function runOauth (){
 
 runOauth
 
+function readCredVar(){ #rename as this is confusing this applies to extracting all values in a file after a colon :
+  #$1 = file name 
+  #$2 = var name e.g. CLIENT_ID
+  local credVar=$(sed -e 1b "$1" | grep "$2" | sed 's/.*://' | sed 's/"//' | sed '$s/"/ /g' | xargs)
+  echo "$credVar"
+}
+
+readonly PARENT_DIR=${PWD%/*}
+readonly three_DIR_UP=${PWD%/*/*/*}
+readonly COFFEE_FILE_NAME=$(ls ../ | grep .coffee)
+readonly COFFEE_FILE="$PARENT_DIR"/"$COFFEE_FILE_NAME"
+readonly GOOGLE_APP=$( readCredVar "$COFFEE_FILE" GOOGLE_APP )
+readonly CONFIG_FILE="$three_DIR_UP"/google_oauth_"$GOOGLE_APP".config
+
 whereAwk=$(which awk)
 whereCat=$(which cat)
 whereNetstat=$(which netstat)

@@ -6,7 +6,7 @@
 # Dependencies. Best to leave them alone.
 _ = require('./assets/lib/underscore.js');
 
-GOOGLE_APP: "gmail"
+GOOGLE_APP:"gmail"
 
 #==== Google API Credentials ====
 # Fill in your Google API client id and client secret
@@ -21,10 +21,10 @@ AUTHORIZATION_CODE:""
 
 command: """
   if [ ! -d assets ]; then
-    cd "$PWD/gmail.widget"
-    "$PWD/assets/gmail.sh"
+    cd "$PWD"/gmail.widget
+    "$PWD"/assets/run.sh
   else
-    assets/gmail.sh
+    assets/run.sh
   fi
 """
 
