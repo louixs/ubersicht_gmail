@@ -92,7 +92,7 @@ style: """
   color: #df740c  //#7eFFFF
   font-weight: 100
   font-size: 11 px
-  top: 50%
+  top: 60%
   left: 2%
   line-height: 1.5
   //margin-left: -40px
